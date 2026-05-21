@@ -1,0 +1,17 @@
+{
+  "short_name": "Tabata Pro",
+  "name": "Tabata Intervallum Időzítő",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/4813/4813009.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#000000",
+  "theme_color": "#ff6200",
+  "display": "standalone",
+  "orientation": "portrait"
+}
