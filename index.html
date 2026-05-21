@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tabata Időzítő - Erőteljes Dudával</title>
+    <title>Tabata Időzítő - Profi</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tabata Pro">
+
+    <link rel="manifest" href="manifest.json">
+
     <style>
         :root {
             --bg-color: #000000;
@@ -485,7 +492,6 @@
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // HANGOS MOTOR EFFEKTEK
     function triggerSound(type) {
         if (type === 'silent' || audioCtx.state === 'suspended') return;
 
@@ -521,13 +527,11 @@
         }
     }
 
-    // ÚJ: ERŐTELJES DUDA HANG (Több oszcillátor összeolvasztásával a vastag, érces hangzásért)
     function triggerHorn() {
         if (audioCtx.state === 'suspended') return;
         const now = audioCtx.currentTime;
-        const duration = 0.4; // 0.4 másodperces erőteljes jelzés
+        const duration = 0.4;
 
-        // Három különböző frekvenciájú fűrészfog hullámot keverünk össze (mint a valódi ködkürtök)
         const freqs = [220, 330, 440]; 
         
         freqs.forEach(f => {
@@ -698,11 +702,9 @@
         const currentStep = workoutPlan[currentStepIndex];
         const assignedSound = soundConfig[currentStep.type]; 
 
-        // Ha 5 és 2 másodperc között vagyunk, jön a kiválasztott ütemjelző csipogás
         if (phaseTimeRemaining <= 5 && phaseTimeRemaining >= 2) {
             triggerSound(assignedSound); 
         } 
-        // FIX: Amikor az utolsó másodperchez ér (1-es szám a kijelzőn), eldördül az erőteljes duda, jelezve a váltást!
         else if (phaseTimeRemaining === 1) {
             triggerHorn();
         }
@@ -736,8 +738,6 @@
         timerInterval = setInterval(tick, 1000);
         
         updateTimerUI();
-        
-        // Az indítás pillanatában leadjuk a sima fázis-csipogást
         triggerSound(soundConfig[workoutPlan[0].type]);
     }
 
