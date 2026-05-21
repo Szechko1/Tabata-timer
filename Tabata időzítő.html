@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabata Időzítő - Erőteljes Dudával</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #1c1c1e;
+            --text-color: #ffffff;
+            --text-muted: #8e8e93;
+            --accent-orange: #ff6200;
+            --accent-green: #00e676;
+            --accent-blue: #2979ff;
+            --accent-purple: #d500f9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .phone-container {
+            width: 100%;
+            max-width: 410px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: var(--bg-color);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .screen {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-top: 10px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .section-title {
+            color: var(--text-muted);
+            font-size: 13px;
+            text-transform: uppercase;
+            margin: 15px 0 8px 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .config-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 5px 15px;
+            margin-bottom: 10px;
+        }
+
+        .config-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #2c2c2e;
+        }
+
+        .config-row:last-child {
+            border-bottom: none;
+        }
+
+        .row-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .row-label {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .row-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .row-right input {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 18px;
+            font-weight: bold;
+            width: 50px;
+            text-align: right;
+            outline: none;
+        }
+
+        .sound-select {
+            background-color: #2c2c2e;
+            color: var(--text-color);
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            text-align: right;
+        }
+
+        .row-right span {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .total-time-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* TIMER SCREEN */
+        .timer-screen {
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            padding: 40px 20px 100px 20px;
+        }
+
+        .status-title {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .stat-box .num {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .stat-box .label {
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .timer-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.1s linear;
+            transform-origin: 50% 50%;
+        }
+
+        .timer-text-container {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-time {
+            font-size: 64px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .sub-time {
+            color: var(--text-muted);
+            font-size: 18px;
+            margin-top: 8px;
+        }
+
+        .phase-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        /* CONTROLS */
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .btn-circle {
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-color);
+            font-weight: bold;
+        }
+
+        .btn-small {
+            width: 65px;
+            height: 65px;
+            background-color: #2c2c2e;
+            font-size: 14px;
+            border: 2px solid #48484a;
+        }
+
+        .btn-main {
+            width: 90px;
+            height: 90px;
+            background-color: var(--accent-orange);
+            font-size: 18px;
+            text-transform: uppercase;
+        }
+
+        /* BOTTOM NAV */
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #000;
+            padding: 15px 0;
+            border-top: 1px solid #1c1c1e;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            font-size: 22px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--accent-orange);
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone-container">
+
+    <div id="settings-screen" class="screen">
+        <header>
+            <div style="width:24px"></div>
+            <h1>App beállítások</h1>
+            <div style="width:24px"></div>
+        </header>
+
+        <div class="section-title">Időzítések</div>
+        <div class="config-card">
+            <div class="config-row">
+                <div class="row-left"><div class="icon" style="background:#ff95001a; color:#ff9500;">⏱</div><div class="row-label">Visszaszámlálás</div></div>
+                <div class="row-right"><input type="number" id="input-countdown" value="5" min="1"><span>mp</span></div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="icon" style="background:#ff2d551a; color:#ff2d55;">🔥</div><div class="row-label">Bemelegítés</div></div>
+                <div class="row-right"><input type="number" id="input-warmup" value="0" min="0"><span>mp</span></div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="icon" style="background:#ff62001a; color:#ff6200;">🏋️</div><div class="row-label">Munkavégzés</div></div>
+                <div class="row-right"><input type="number" id="input-exercise" value="20" min="1"><span>mp</span></div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="icon" style="background:#2979ff1a; color:#2979ff;">💙</div><div class="row-label">Pihenő</div></div>
+                <div class="row-right"><input type="number" id="input-rest" value="10" min="0"><span>mp</span></div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="icon" style="background:#00e6761a; color:#00e676;">🔁</div><div class="row-label">Szettek száma</div></div>
+                <div class="row-right"><input type="number" id="input-sets" value="8" min="1"><span>db</span></div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="icon" style="background:#ff95001a; color:#ff9500;">🔄</div><div class="row-label">Ciklusok száma</div></div>
+                <div class="row-right"><input type="number" id="input-cycles" value="4" min="1"><span>db</span></div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="icon" style="background:#ff2d551a; color:#ff2d55;">🔋</div><div class="row-label">Ciklus pihenő</div></div>
+                <div class="row-right"><input type="number" id="input-recovery" value="0" min="0"><span>mp</span></div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="icon" style="background:#2979ff1a; color:#2979ff;">❄️</div><div class="row-label">Levezetés</div></div>
+                <div class="row-right"><input type="number" id="input-cooldown" value="0" min="0"><span>mp</span></div>
+            </div>
+        </div>
+
+        <div class="section-title">Hangjelzések beállítása</div>
+        <div class="config-card">
+            <div class="config-row">
+                <div class="row-left"><div class="row-label">Visszaszámlálás</div></div>
+                <div class="row-right">
+                    <select id="sound-countdown" class="sound-select">
+                        <option value="beep" selected>Csipogás</option>
+                        <option value="low-beep">Mély jelzés</option>
+                        <option value="double">Dupla csip</option>
+                        <option value="triple">Tripla ütem</option>
+                        <option value="laser">Sci-Fi Lézer</option>
+                        <option value="silent">Néma</option>
+                    </select>
+                </div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="row-label">Bemelegítés</div></div>
+                <div class="row-right">
+                    <select id="sound-warmup" class="sound-select">
+                        <option value="beep">Csipogás</option>
+                        <option value="low-beep" selected>Mély jelzés</option>
+                        <option value="double">Dupla csip</option>
+                        <option value="triple">Tripla ütem</option>
+                        <option value="laser">Sci-Fi Lézer</option>
+                        <option value="silent">Néma</option>
+                    </select>
+                </div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="row-label">Munkavégzés</div></div>
+                <div class="row-right">
+                    <select id="sound-exercise" class="sound-select">
+                        <option value="beep" selected>Csipogás</option>
+                        <option value="low-beep">Mély jelzés</option>
+                        <option value="double">Dupla csip</option>
+                        <option value="triple">Tripla ütem</option>
+                        <option value="laser">Sci-Fi Lézer</option>
+                        <option value="silent">Néma</option>
+                    </select>
+                </div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="row-label">Pihenő fázis</div></div>
+                <div class="row-right">
+                    <select id="sound-rest" class="sound-select">
+                        <option value="beep">Csipogás</option>
+                        <option value="low-beep">Mély jelzés</option>
+                        <option value="double" selected>Dupla csip</option>
+                        <option value="triple">Tripla ütem</option>
+                        <option value="laser">Sci-Fi Lézer</option>
+                        <option value="silent">Néma</option>
+                    </select>
+                </div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="row-label">Ciklus pihenő</div></div>
+                <div class="row-right">
+                    <select id="sound-recovery" class="sound-select">
+                        <option value="beep">Csipogás</option>
+                        <option value="low-beep">Mély jelzés</option>
+                        <option value="double">Dupla csip</option>
+                        <option value="triple">Tripla ütem</option>
+                        <option value="laser" selected>Sci-Fi Lézer</option>
+                        <option value="silent">Néma</option>
+                    </select>
+                </div>
+            </div>
+            <div class="config-row">
+                <div class="row-left"><div class="row-label">Levezetés</div></div>
+                <div class="row-right">
+                    <select id="sound-cooldown" class="sound-select">
+                        <option value="beep">Csipogás</option>
+                        <option value="low-beep" selected>Mély jelzés</option>
+                        <option value="double">Dupla csip</option>
+                        <option value="triple">Tripla ütem</option>
+                        <option value="laser">Sci-Fi Lézer</option>
+                        <option value="silent">Néma</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="total-time-box">
+            <span>Teljes edzésidő</span>
+            <span class="total-val" id="total-time-display">0 p 0 mp</span>
+        </div>
+
+        <button class="btn-circle btn-main" id="save-to-timer" style="margin: 15px auto 0 auto; width: 100%; border-radius: 12px; height: 50px;">Mentés és Indítás</button>
+    </div>
+
+    <div id="timer-screen" class="screen timer-screen hidden">
+        <div>
+            <div class="status-title" id="phase-title">KÉSZ?</div>
+            <div class="stats-grid">
+                <div class="stat-box"><div class="num" id="current-set-display">0/0</div><div class="label">Szett</div></div>
+                <div class="stat-box"><div class="num" id="current-cycle-display">0/0</div><div class="label">Ciklus</div></div>
+            </div>
+        </div>
+
+        <div class="timer-container">
+            <svg class="progress-ring" width="280" height="280">
+                <circle class="progress-ring__circle" id="outer-circle" stroke="#00e676" stroke-width="10" fill="transparent" r="120" cx="140" cy="140"/>
+                <circle class="progress-ring__circle" id="inner-circle" stroke="#ff6200" stroke-width="10" fill="transparent" r="100" cx="140" cy="140"/>
+            </svg>
+            <div class="timer-text-container">
+                <div class="phase-icon" id="phase-icon">⏱️</div>
+                <div class="main-time" id="main-time-display">05</div>
+                <div class="sub-time" id="elapsed-time-display">00:00</div>
+            </div>
+        </div>
+
+        <div class="controls-row">
+            <button class="btn-circle btn-small" id="stop-btn">stop</button>
+            <button class="btn-circle btn-main" id="start-pause-btn">start</button>
+            <button class="btn-circle btn-small" id="skip-btn">▶│</button>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" id="nav-settings">⚙️</div>
+        <div class="nav-item" id="nav-timer">⏱️</div>
+    </div>
+
+</div>
+
+<script>
+    let config = {};
+    let soundConfig = {}; 
+    let workoutPlan = [];
+    let currentStepIndex = 0;
+    let timerInterval = null;
+    let isRunning = false;
+    let totalElapsedSeconds = 0;
+    let phaseTimeRemaining = 0;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // HANGOS MOTOR EFFEKTEK
+    function triggerSound(type) {
+        if (type === 'silent' || audioCtx.state === 'suspended') return;
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'beep') {
+            playTone(660, 0.15);
+        } 
+        else if (type === 'low-beep') {
+            playTone(320, 0.2);
+        } 
+        else if (type === 'double') {
+            playTone(580, 0.05);
+            setTimeout(() => playTone(580, 0.05), 120);
+        } 
+        else if (type === 'triple') {
+            playTone(700, 0.04);
+            setTimeout(() => playTone(700, 0.04), 100);
+            setTimeout(() => playTone(850, 0.08), 200);
+        } 
+        else if (type === 'laser') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(900, now);
+            osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(now + 0.3);
+        }
+    }
+
+    // ÚJ: ERŐTELJES DUDA HANG (Több oszcillátor összeolvasztásával a vastag, érces hangzásért)
+    function triggerHorn() {
+        if (audioCtx.state === 'suspended') return;
+        const now = audioCtx.currentTime;
+        const duration = 0.4; // 0.4 másodperces erőteljes jelzés
+
+        // Három különböző frekvenciájú fűrészfog hullámot keverünk össze (mint a valódi ködkürtök)
+        const freqs = [220, 330, 440]; 
+        
+        freqs.forEach(f => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(f, now);
+            
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(now + duration);
+        });
+    }
+
+    function playTone(freq, duration) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    const inputs = {
+        countdown: document.getElementById('input-countdown'),
+        warmup: document.getElementById('input-warmup'),
+        exercise: document.getElementById('input-exercise'),
+        rest: document.getElementById('input-rest'),
+        sets: document.getElementById('input-sets'),
+        cycles: document.getElementById('input-cycles'),
+        recovery: document.getElementById('input-recovery'),
+        cooldown: document.getElementById('input-cooldown'),
+    };
+
+    const soundSelects = {
+        countdown: document.getElementById('sound-countdown'),
+        warmup: document.getElementById('sound-warmup'),
+        exercise: document.getElementById('sound-exercise'),
+        rest: document.getElementById('sound-rest'),
+        recovery: document.getElementById('sound-recovery'),
+        cooldown: document.getElementById('sound-cooldown')
+    };
+
+    const totalTimeDisplay = document.getElementById('total-time-display');
+    const settingsScreen = document.getElementById('settings-screen');
+    const timerScreen = document.getElementById('timer-screen');
+    const phaseTitle = document.getElementById('phase-title');
+    const currentSetDisplay = document.getElementById('current-set-display');
+    const currentCycleDisplay = document.getElementById('current-cycle-display');
+    const mainTimeDisplay = document.getElementById('main-time-display');
+    const elapsedTimeDisplay = document.getElementById('elapsed-time-display');
+    const phaseIcon = document.getElementById('phase-icon');
+    const startPauseBtn = document.getElementById('start-pause-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const skipBtn = document.getElementById('skip-btn');
+    const outerCircle = document.getElementById('outer-circle');
+    const innerCircle = document.getElementById('inner-circle');
+
+    const setupCircle = (circle, radius) => {
+        const circumference = radius * 2 * Math.PI;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = circumference;
+        return circumference;
+    };
+    const outerCircum = setupCircle(outerCircle, 120);
+    const innerCircum = setupCircle(innerCircle, 100);
+
+    function setProgress(circle, circumference, percent) {
+        circle.style.strokeDashoffset = circumference - (percent / 100) * circumference;
+    }
+
+    function formatTime(seconds) {
+        return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+    }
+
+    function updateConfigFromInputs() {
+        for (let key in inputs) {
+            config[key] = parseInt(inputs[key].value) || 0;
+        }
+        for (let key in soundSelects) {
+            soundConfig[key] = soundSelects[key].value;
+        }
+    }
+
+    function calculateTotalTime() {
+        updateConfigFromInputs();
+        let total = config.countdown + config.warmup;
+        let singleCycleTime = 0;
+        for(let s=0; s<config.sets; s++) {
+            singleCycleTime += config.exercise;
+            if(s < config.sets - 1) singleCycleTime += config.rest;
+        }
+        total += singleCycleTime * config.cycles;
+        total += config.recovery * (config.cycles - 1);
+        total += config.cooldown;
+
+        totalTimeDisplay.textContent = `${Math.floor(total / 60)} p ${total % 60} mp`;
+    }
+
+    function buildWorkoutPlan() {
+        workoutPlan = [];
+        updateConfigFromInputs();
+
+        let cdTime = config.countdown > 0 ? config.countdown : 5;
+        workoutPlan.push({ type: 'countdown', name: 'Felkészülés', duration: cdTime, color: '#ff9500', icon: '⏱️', set: 0, cycle: 1 });
+
+        if(config.warmup > 0) {
+            workoutPlan.push({ type: 'warmup', name: 'Bemelegítés', duration: config.warmup, color: '#ff2d55', icon: '🔥', set: 0, cycle: 1 });
+        }
+
+        for(let c = 1; c <= config.cycles; c++) {
+            for(let s = 1; s <= config.sets; s++) {
+                workoutPlan.push({ type: 'exercise', name: 'Munkavégzés', duration: config.exercise, color: '#ff6200', icon: '🏋️', set: s, cycle: c });
+                if(s < config.sets && config.rest > 0) {
+                    workoutPlan.push({ type: 'rest', name: 'Pihenő', duration: config.rest, color: '#2979ff', icon: '💙', set: s, cycle: c });
+                }
+            }
+            if(c < config.cycles && config.recovery > 0) {
+                workoutPlan.push({ type: 'recovery', name: 'Ciklus Pihenő', duration: config.recovery, color: '#d500f9', icon: '🔋', set: config.sets, cycle: c });
+            }
+        }
+
+        if(config.cooldown > 0) {
+            workoutPlan.push({ type: 'cooldown', name: 'Levezetés', duration: config.cooldown, color: '#00e676', icon: '❄️', set: config.sets, cycle: config.cycles });
+        }
+    }
+
+    function updateTimerUI() {
+        if (currentStepIndex >= workoutPlan.length) {
+            phaseTitle.textContent = "KÉSZ! Szép munka!";
+            mainTimeDisplay.textContent = "00";
+            phaseIcon.textContent = "🏆";
+            setProgress(innerCircle, innerCircum, 100);
+            setProgress(outerCircle, outerCircum, 100);
+            clearInterval(timerInterval);
+            isRunning = false;
+            startPauseBtn.textContent = "Újra";
+            return;
+        }
+
+        const step = workoutPlan[currentStepIndex];
+        phaseTitle.textContent = step.name;
+        phaseTitle.style.color = step.color;
+        mainTimeDisplay.textContent = phaseTimeRemaining;
+        phaseIcon.textContent = step.icon;
+        currentSetDisplay.textContent = `${step.set}/${config.sets}`;
+        currentCycleDisplay.textContent = `${step.cycle}/${config.cycles}`;
+        elapsedTimeDisplay.textContent = formatTime(totalElapsedSeconds);
+
+        innerCircle.style.stroke = step.color;
+        setProgress(innerCircle, innerCircum, (phaseTimeRemaining / step.duration) * 100);
+        setProgress(outerCircle, outerCircum, 100 - ((currentStepIndex / workoutPlan.length) * 100));
+    }
+
+    function tick() {
+        if (!isRunning) return;
+
+        const currentStep = workoutPlan[currentStepIndex];
+        const assignedSound = soundConfig[currentStep.type]; 
+
+        // Ha 5 és 2 másodperc között vagyunk, jön a kiválasztott ütemjelző csipogás
+        if (phaseTimeRemaining <= 5 && phaseTimeRemaining >= 2) {
+            triggerSound(assignedSound); 
+        } 
+        // FIX: Amikor az utolsó másodperchez ér (1-es szám a kijelzőn), eldördül az erőteljes duda, jelezve a váltást!
+        else if (phaseTimeRemaining === 1) {
+            triggerHorn();
+        }
+
+        if (phaseTimeRemaining > 1) {
+            phaseTimeRemaining--;
+            totalElapsedSeconds++;
+        } else {
+            totalElapsedSeconds++;
+            currentStepIndex++;
+            if (currentStepIndex < workoutPlan.length) {
+                phaseTimeRemaining = workoutPlan[currentStepIndex].duration;
+            }
+        }
+        updateTimerUI();
+    }
+
+    function startTimer() {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        
+        buildWorkoutPlan();
+        currentStepIndex = 0;
+        totalElapsedSeconds = 0;
+        phaseTimeRemaining = workoutPlan[0].duration;
+        
+        isRunning = true;
+        startPauseBtn.textContent = "pause";
+        startPauseBtn.style.backgroundColor = "#48484a";
+        
+        clearInterval(timerInterval);
+        timerInterval = setInterval(tick, 1000);
+        
+        updateTimerUI();
+        
+        // Az indítás pillanatában leadjuk a sima fázis-csipogást
+        triggerSound(soundConfig[workoutPlan[0].type]);
+    }
+
+    function pauseTimer() {
+        isRunning = false;
+        startPauseBtn.textContent = "start";
+        startPauseBtn.style.backgroundColor = "var(--accent-orange)";
+        clearInterval(timerInterval);
+    }
+
+    function resetTimer() {
+        pauseTimer();
+        currentStepIndex = 0;
+        totalElapsedSeconds = 0;
+        workoutPlan = [];
+        phaseTitle.textContent = "KÉSZ?";
+        mainTimeDisplay.textContent = "00";
+        elapsedTimeDisplay.textContent = "00:00";
+        setProgress(innerCircle, innerCircum, 0);
+        setProgress(outerCircle, outerCircum, 0);
+    }
+
+    Object.values(inputs).forEach(input => input.addEventListener('input', calculateTotalTime));
+    
+    Object.keys(soundSelects).forEach(key => {
+        soundSelects[key].addEventListener('change', (e) => {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            triggerSound(e.target.value);
+        });
+    });
+
+    document.getElementById('nav-settings').addEventListener('click', () => {
+        settingsScreen.classList.remove('hidden');
+        timerScreen.classList.add('hidden');
+        document.getElementById('nav-settings').classList.add('active');
+        document.getElementById('nav-timer').classList.remove('active');
+    });
+
+    const goToTimerNav = () => {
+        settingsScreen.classList.add('hidden');
+        timerScreen.classList.remove('hidden');
+        document.getElementById('nav-settings').classList.remove('active');
+        document.getElementById('nav-timer').classList.add('active');
+    };
+
+    document.getElementById('nav-timer').addEventListener('click', goToTimerNav);
+    
+    document.getElementById('save-to-timer').addEventListener('click', () => {
+        resetTimer();
+        goToTimerNav();
+        startTimer();
+    });
+
+    startPauseBtn.addEventListener('click', () => { isRunning ? pauseTimer() : startTimer(); });
+    stopBtn.addEventListener('click', resetTimer);
+    skipBtn.addEventListener('click', () => {
+        if(workoutPlan.length === 0) return;
+        currentStepIndex++;
+        if(currentStepIndex < workoutPlan.length) {
+            phaseTimeRemaining = workoutPlan[currentStepIndex].duration;
+        }
+        updateTimerUI();
+    });
+
+    calculateTotalTime();
+</script>
+</body>
+</html>
