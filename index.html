@@ -489,21 +489,43 @@
     let isRunning = false;
     let totalElapsedSeconds = 0;
     let phaseTimeRemaining = 0;
+    let wakeLock = null; // Képernyőzár változója
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // EXTRÉM HANGOS MOTOR EFFEKTEK
+    // ÚJ: KÉPERNYŐ ÉBREN TARTÁSA (WAKE LOCK ENGINE)
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Képernyőzár aktív: Nem fog lekapcsolni a kijelző.');
+            }
+        } catch (err) {
+            console.log('Sikertelen képernyőzár igénylés:', err.message);
+        }
+    }
+
+    function releaseWakeLock() {
+        if (wakeLock !== null) {
+            wakeLock.release();
+            wakeLock = null;
+            console.log('Képernyőzár kioldva: A telefon újra lezárhat.');
+        }
+    }
+
+    // Alkalmazás fókuszba kerülésekor a zár automatikus megújítása (ha épp fut az edzés)
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible' && isRunning) {
+            await requestWakeLock();
+        }
+    });
+
     function triggerSound(type) {
         if (type === 'silent' || audioCtx.state === 'suspended') return;
-
         const now = audioCtx.currentTime;
 
-        if (type === 'beep') {
-            playTone(660, 0.15);
-        } 
-        else if (type === 'low-beep') {
-            playTone(320, 0.2);
-        } 
+        if (type === 'beep') { playTone(660, 0.15); } 
+        else if (type === 'low-beep') { playTone(320, 0.2); } 
         else if (type === 'double') {
             playTone(580, 0.05);
             setTimeout(() => playTone(580, 0.05), 120);
@@ -519,7 +541,7 @@
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(900, now);
             osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
-            gain.gain.setValueAtTime(1.0, now); // MAX VOLUME
+            gain.gain.setValueAtTime(1.0, now);
             gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
@@ -528,49 +550,39 @@
         }
     }
 
-    // ERŐTELJES DUDA HANG (Munkavégzések és normál pihenők elejére)
     function triggerHorn() {
         if (audioCtx.state === 'suspended') return;
         const now = audioCtx.currentTime;
         const duration = 0.4;
-
         const freqs = [220, 330, 440]; 
         
         freqs.forEach(f => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(f, now);
-            
-            gain.gain.setValueAtTime(0.6, now); // Szándékos erősítés az átütő dudahanghoz
+            gain.gain.setValueAtTime(0.6, now);
             gain.gain.linearRampToValueAtTime(0.01, now + duration);
-            
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            
             osc.start();
             osc.stop(now + duration);
         });
     }
 
-    // ÚJ: EXTRA MÉLY ÉS HOSSZÚ ZÚGÁS CIKLUS PIHENŐ ELŐTT (Basszusos figyelmeztető)
     function triggerLongRecoverySignal() {
         if (audioCtx.state === 'suspended') return;
         const now = audioCtx.currentTime;
         const duration = 1.2; 
 
-        // Két nagyon mély frekvencia (150Hz és 200Hz) együttes lefelé csúszása
         [150, 200].forEach(f => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'square'; // Négyszögjel a vastag, szintetizátoros basszusért
+            osc.type = 'square';
             osc.frequency.setValueAtTime(f, now);
             osc.frequency.exponentialRampToValueAtTime(f / 1.5, now + duration); 
-            
-            gain.gain.setValueAtTime(0.8, now); // Brutálisan hangos mély
+            gain.gain.setValueAtTime(0.8, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-            
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
@@ -578,13 +590,12 @@
         });
     }
 
-    // Alaphangok maximális hangerőn (1.0)
     function playTone(freq, duration) {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'triangle'; 
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(1.0, audioCtx.currentTime); // 100% MAXIMUM HANGERŐ
+        gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
@@ -706,6 +717,7 @@
             clearInterval(timerInterval);
             isRunning = false;
             startPauseBtn.textContent = "Újra";
+            releaseWakeLock(); // Edzés végén kioldás
             return;
         }
 
@@ -730,17 +742,10 @@
         const nextStep = workoutPlan[currentStepIndex + 1];
         const assignedSound = soundConfig[currentStep.type]; 
 
-        // Az utolsó másodpercben vagyunk
         if (phaseTimeRemaining === 1) {
-            // Ha a következő fázis a Ciklus Pihenő, akkor jön a mély zúgás
-            if (nextStep && nextStep.type === 'recovery') {
-                triggerLongRecoverySignal();
-            } else {
-                // Egyébként a normál agresszív duda
-                triggerHorn();
-            }
+            if (nextStep && nextStep.type === 'recovery') { triggerLongRecoverySignal(); } 
+            else { triggerHorn(); }
         } 
-        // 5 és 2 másodperc között jön a felhangosított ütemjelző csipogás
         else if (phaseTimeRemaining <= 5 && phaseTimeRemaining >= 2) {
             triggerSound(assignedSound); 
         }
@@ -760,7 +765,8 @@
 
     function startTimer() {
         if(audioCtx.state === 'suspended') audioCtx.resume();
-        
+        requestWakeLock(); // Időzítő indulásakor ébren tartás igénylése
+
         buildWorkoutPlan();
         currentStepIndex = 0;
         totalElapsedSeconds = 0;
@@ -782,6 +788,7 @@
         startPauseBtn.textContent = "start";
         startPauseBtn.style.backgroundColor = "var(--accent-orange)";
         clearInterval(timerInterval);
+        releaseWakeLock(); // Szüneteltetés alatt kiengedjük a zárat
     }
 
     function resetTimer() {
@@ -794,6 +801,7 @@
         elapsedTimeDisplay.textContent = "00:00";
         setProgress(innerCircle, innerCircum, 0);
         setProgress(outerCircle, outerCircum, 0);
+        releaseWakeLock(); // Teljes leállításkor kioldás
     }
 
     Object.values(inputs).forEach(input => input.addEventListener('input', calculateTotalTime));
@@ -810,6 +818,7 @@
         timerScreen.classList.add('hidden');
         document.getElementById('nav-settings').classList.add('active');
         document.getElementById('nav-timer').classList.remove('active');
+        releaseWakeLock(); // Ha manuálisan visszamegy a beállításokhoz, kikapcsol a zár
     });
 
     const goToTimerNav = () => {
