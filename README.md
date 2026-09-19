@@ -15,6 +15,7 @@ A projekt különlegessége, hogy **egyetlen HTML fájlból áll**, nem igényel
 * **Profi hangjelzések fázisonként:** 6-féle különböző elektronikus hanghatás (Csipogás, Mély jelzés, Dupla, Tripla, Sci-Fi Lézer vagy Néma), amelyek fázisonként külön-külön konfigurálhatók.
 * **Erőteljes Duda (Horn) effekt:** Minden visszaszámlálás utolsó másodpercében (váltáskor) egy masszív, többszólamú dudahang jelzi a fázis végét.
 * **Dupla vizuális visszajelzés:** Modern SVG alapú haladási gyűrűk. A belső kör az aktuális fázis idejét, a külső zöld kör pedig a teljes edzésből eltelt összidőt mutatja.
+* **Vezérlőgombok az óra alatt:** a **stop** gomb teljesen leállítja és nullázza az edzést, a középső narancssárga gomb indít / szüneteltet (**a szünet utáni újraindítás onnan folytatja, ahol abbahagytad**), a jobb oldali **ugrás** (▶│) gomb pedig azonnal a következő fázisra lép.
 * **PWA-szerű élmény:** Mobilböngészőből közvetlenül hozzáadható a kezdőképernyőhöz, így applikációként futtatható.
 
 ---
