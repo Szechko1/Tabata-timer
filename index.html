@@ -273,6 +273,19 @@
             background-color: #2c2c2e;
             font-size: 14px;
             border: 2px solid #48484a;
+            flex-direction: column;
+            gap: 2px;
+            line-height: 1;
+        }
+
+        .btn-icon {
+            font-size: 17px;
+        }
+
+        .btn-sublabel {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
         }
 
         .btn-main {
@@ -469,7 +482,7 @@
         <div class="controls-row">
             <button class="btn-circle btn-small" id="stop-btn">stop</button>
             <button class="btn-circle btn-main" id="start-pause-btn">start</button>
-            <button class="btn-circle btn-small" id="skip-btn">▶│</button>
+            <button class="btn-circle btn-small" id="skip-btn" title="Ugrás a következő fázisra" aria-label="Ugrás a következő fázisra"><span class="btn-icon">▶│</span><span class="btn-sublabel">ugrás</span></button>
         </div>
     </div>
 
@@ -717,6 +730,7 @@
             clearInterval(timerInterval);
             isRunning = false;
             startPauseBtn.textContent = "Újra";
+            startPauseBtn.style.backgroundColor = "var(--accent-orange)";
             releaseWakeLock(); // Edzés végén kioldás
             return;
         }
@@ -763,24 +777,41 @@
         updateTimerUI();
     }
 
-    function startTimer() {
+    // Van-e félbehagyott (szüneteltetett) edzés, amit folytatni lehet?
+    function isWorkoutInProgress() {
+        return workoutPlan.length > 0 && currentStepIndex < workoutPlan.length;
+    }
+
+    // Az óra elindítása - közös rész az induláshoz és a folytatáshoz
+    function runClock() {
         if(audioCtx.state === 'suspended') audioCtx.resume();
         requestWakeLock(); // Időzítő indulásakor ébren tartás igénylése
 
+        isRunning = true;
+        startPauseBtn.textContent = "pause";
+        startPauseBtn.style.backgroundColor = "#48484a";
+
+        clearInterval(timerInterval);
+        timerInterval = setInterval(tick, 1000);
+    }
+
+    // Teljesen új edzés indítása az elejéről
+    function startTimer() {
         buildWorkoutPlan();
         currentStepIndex = 0;
         totalElapsedSeconds = 0;
         phaseTimeRemaining = workoutPlan[0].duration;
-        
-        isRunning = true;
-        startPauseBtn.textContent = "pause";
-        startPauseBtn.style.backgroundColor = "#48484a";
-        
-        clearInterval(timerInterval);
-        timerInterval = setInterval(tick, 1000);
-        
+
+        runClock();
+
         updateTimerUI();
         triggerSound(soundConfig[workoutPlan[0].type]);
+    }
+
+    // Szüneteltetett edzés folytatása onnan, ahol abbahagytuk
+    function resumeTimer() {
+        runClock();
+        updateTimerUI();
     }
 
     function pauseTimer() {
@@ -836,14 +867,23 @@
         startTimer();
     });
 
-    startPauseBtn.addEventListener('click', () => { isRunning ? pauseTimer() : startTimer(); });
-    stopBtn.addEventListener('click', resetTimer);
-    skipBtn.addEventListener('click', () => {
-        if(workoutPlan.length === 0) return;
-        currentStepIndex++;
-        if(currentStepIndex < workoutPlan.length) {
-            phaseTimeRemaining = workoutPlan[currentStepIndex].duration;
+    startPauseBtn.addEventListener('click', () => {
+        if (isRunning) {
+            pauseTimer();
+        } else if (isWorkoutInProgress()) {
+            resumeTimer(); // Szünet után ott folytatjuk, ahol abbahagytuk
+        } else {
+            startTimer(); // Nincs folyó edzés (vagy végigment): új indulás az elejéről
         }
+    });
+    stopBtn.addEventListener('click', resetTimer);
+    // Ugrás: az aktuális fázis lezárása és továbblépés a következőre
+    skipBtn.addEventListener('click', () => {
+        if(!isWorkoutInProgress()) return;
+        currentStepIndex++;
+        phaseTimeRemaining = currentStepIndex < workoutPlan.length
+            ? workoutPlan[currentStepIndex].duration
+            : 0;
         updateTimerUI();
     });
 
